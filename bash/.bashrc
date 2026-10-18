@@ -1,94 +1,44 @@
 # ~/.bashrc: executed by bash(1) for non-login shells.
-# see /usr/share/doc/bash/examples/startup-files (in the package bash-doc)
-# for examples
 
-export FZF_CTRL_T_COMMAND='fd --type f --hidden --exclude .git'
 # If not running interactively, don't do anything
 case $- in
     *i*) ;;
       *) return;;
 esac
 
-# don't put duplicate lines or lines starting with space in the history.
-# See bash(1) for more options
+# ---------------------------------------------------------------------------
+# History
+# ---------------------------------------------------------------------------
 HISTCONTROL=ignoreboth
-
-# append to the history file, don't overwrite it
+HISTSIZE=100000
+HISTFILESIZE=100000
 shopt -s histappend
 
-# for setting history length see HISTSIZE and HISTFILESIZE in bash(1)
-HISTSIZE=1000
-HISTFILESIZE=2000
-
-# check the window size after each command and, if necessary,
-# update the values of LINES and COLUMNS.
+# ---------------------------------------------------------------------------
+# Shell options
+# ---------------------------------------------------------------------------
 shopt -s checkwinsize
-
-# If set, the pattern "**" used in a pathname expansion context will
-# match all files and zero or more directories and subdirectories.
 #shopt -s globstar
 
 # make less more friendly for non-text input files, see lesspipe(1)
 [ -x /usr/bin/lesspipe ] && eval "$(SHELL=/bin/sh lesspipe)"
 
-# set variable identifying the chroot you work in (used in the prompt below)
+# set variable identifying the chroot you work in
 if [ -z "${debian_chroot:-}" ] && [ -r /etc/debian_chroot ]; then
     debian_chroot=$(cat /etc/debian_chroot)
 fi
 
-# set a fancy prompt (non-color, unless we know we "want" color)
-case "$TERM" in
-    xterm-color|*-256color) color_prompt=yes;;
-esac
-
-# uncomment for a colored prompt, if the terminal has the capability; turned
-# off by default to not distract the user: the focus in a terminal window
-# should be on the output of commands, not on the prompt
-#force_color_prompt=yes
-
-if [ -n "$force_color_prompt" ]; then
-    if [ -x /usr/bin/tput ] && tput setaf 1 >&/dev/null; then
-	# We have color support; assume it's compliant with Ecma-48
-	# (ISO/IEC-6429). (Lack of such support is extremely rare, and such
-	# a case would tend to support setf rather than setaf.)
-	color_prompt=yes
-    else
-	color_prompt=
-    fi
-fi
-
-if [ "$color_prompt" = yes ]; then
-    PS1='${debian_chroot:+($debian_chroot)}\[\033[01;32m\]\u@\h\[\033[00m\]:\[\033[01;34m\]\w\[\033[00m\]\$ '
-else
-    PS1='${debian_chroot:+($debian_chroot)}\u@\h:\w\$ '
-fi
-unset color_prompt force_color_prompt
-
-# If this is an xterm set the title to user@host:dir
-case "$TERM" in
-xterm*|rxvt*)
-    PS1="\[\e]0;${debian_chroot:+($debian_chroot)}\u@\h: \w\a\]$PS1"
-    ;;
-*)
-    ;;
-esac
-
-# enable color support of ls and also add handy aliases
+# ---------------------------------------------------------------------------
+# Colors and aliases
+# ---------------------------------------------------------------------------
 if [ -x /usr/bin/dircolors ]; then
     test -r ~/.dircolors && eval "$(dircolors -b ~/.dircolors)" || eval "$(dircolors -b)"
     alias ls='ls --color=auto'
-    #alias dir='dir --color=auto'
-    #alias vdir='vdir --color=auto'
-
     alias grep='grep --color=auto'
     alias fgrep='fgrep --color=auto'
     alias egrep='egrep --color=auto'
 fi
 
-# colored GCC warnings and errors
-#export GCC_COLORS='error=01;31:warning=01;35:note=01;36:caret=01;32:locus=01:quote=01'
-
-# some more ls aliases
 alias ll='ls -alF'
 alias la='ls -A'
 alias l='ls -CF'
@@ -97,18 +47,13 @@ alias l='ls -CF'
 #   sleep 10; alert
 alias alert='notify-send --urgency=low -i "$([ $? = 0 ] && echo terminal || echo error)" "$(history|tail -n1|sed -e '\''s/^\s*[0-9]\+\s*//;s/[;&|]\s*alert$//'\'')"'
 
-# Alias definitions.
-# You may want to put all your additions into a separate file like
-# ~/.bash_aliases, instead of adding them here directly.
-# See /usr/share/doc/bash-doc/examples in the bash-doc package.
-
 if [ -f ~/.bash_aliases ]; then
     . ~/.bash_aliases
 fi
 
-# enable programmable completion features (you don't need to enable
-# this, if it's already enabled in /etc/bash.bashrc and /etc/profile
-# sources /etc/bash.bashrc).
+# ---------------------------------------------------------------------------
+# Programmable completion
+# ---------------------------------------------------------------------------
 if ! shopt -oq posix; then
   if [ -f /usr/share/bash-completion/bash_completion ]; then
     . /usr/share/bash-completion/bash_completion
@@ -116,67 +61,45 @@ if ! shopt -oq posix; then
     . /etc/bash_completion
   fi
 fi
-export PATH="$HOME/.config/composer/vendor/bin:$PATH"
 
-  export PATH="${PATH}:/home/alex24/.cargo/bin"
+# ---------------------------------------------------------------------------
+# PATH and language environments
+# ---------------------------------------------------------------------------
+export PATH="$HOME/.local/bin:$HOME/.config/composer/vendor/bin:$HOME/.cargo/bin:$PATH"
 
-  export PATH="${PATH}:/home/alex24/.cargo/bin"
+[ -f "$HOME/.deno/env" ] && . "$HOME/.deno/env"
 
-  export PATH="${PATH}:/home/alex24/.cargo/bin"
+# ---------------------------------------------------------------------------
+# fzf: Ctrl+T (files), Alt+C (cd into subdirectory), Ctrl+R (history)
+# Variables must be set before the key-bindings file is sourced.
+# ---------------------------------------------------------------------------
+export FZF_DEFAULT_OPTS='--height=60% --reverse --bind ctrl-j:down,ctrl-k:up'
 
-. "$HOME/.atuin/bin/env"
+export FZF_CTRL_T_COMMAND='fd --type f --hidden --exclude .git'
+export FZF_CTRL_T_OPTS="--preview 'bat --color=always --line-range :200 {}'"
 
+export FZF_ALT_C_COMMAND='fd --type d --hidden --exclude .git'
+export FZF_ALT_C_OPTS="--preview 'eza -TL 1 --color=always {}'"
+
+# Sourced BEFORE atuin, so atuin keeps Ctrl+R and the Up arrow
+[ -f /usr/share/doc/fzf/examples/key-bindings.bash ] && \
+    source /usr/share/doc/fzf/examples/key-bindings.bash
+
+# ---------------------------------------------------------------------------
+# atuin: shell history
+# ---------------------------------------------------------------------------
+[ -f "$HOME/.atuin/bin/env" ] && . "$HOME/.atuin/bin/env"
 [[ -f ~/.bash-preexec.sh ]] && source ~/.bash-preexec.sh
-eval "$(atuin init bash)"
-. "/home/alex24/.deno/env"
+command -v atuin >/dev/null 2>&1 && eval "$(atuin init bash)"
 
+# ---------------------------------------------------------------------------
+# Custom functions and key bindings: c (Alt+D), rgi (Alt+G)
+# ---------------------------------------------------------------------------
+[ -f "$HOME/.config/bash/functions.sh" ] && . "$HOME/.config/bash/functions.sh"
 
-# Interactive directory picker: Alt+D
-c() {
-    local dir
+# ---------------------------------------------------------------------------
+# zoxide and prompt (keep these last)
+# ---------------------------------------------------------------------------
+command -v zoxide >/dev/null 2>&1 && eval "$(zoxide init bash)"
+command -v starship >/dev/null 2>&1 && eval "$(starship init bash)"
 
-    dir="$(zoxide query -l | fzf \
-        --height=40% \
-        --reverse \
-        --preview 'if command -v eza >/dev/null 2>&1; then eza -TL 1 --color=always {}; else ls -la --color=always {}; fi' \
-        --bind 'ctrl-j:down,ctrl-k:up,enter:accept')" || return 0
-
-    [[ -n "$dir" ]] && cd -- "$dir"
-}
-
-# Don't store commands starting with a space in history
-HISTCONTROL=ignoreboth
-
-# Alt+D: clear the line, run " c" and press Enter, so the prompt is rebuilt
-if [[ $- == *i* ]]; then
-    bind '"\ed": "\C-e\C-u c\C-m"'
-fi
-
-source /usr/share/doc/fzf/examples/key-bindings.bash
-
-
-
-rgi() {
-    local rg_cmd='rg --column --line-number --no-heading --color=always --smart-case'
-    local selection file line
-
-    selection="$(
-        fzf --ansi --disabled --query "${*:-}" \
-            --height=70% --reverse \
-            --bind "start:reload:$rg_cmd {q} || true" \
-            --bind "change:reload:sleep 0.1; $rg_cmd {q} || true" \
-            --delimiter : \
-            --preview 'bat --color=always --highlight-line {2} {1}' \
-            --preview-window 'right,55%,+{2}+3/3,~3'
-    )" || return 0
-
-    [[ -z "$selection" ]] && return 0
-
-    file="$(cut -d: -f1 <<<"$selection")"
-    line="$(cut -d: -f2 <<<"$selection")"
-
-    ${EDITOR:-lvim} "+$line" -- "$file"
-}
-
-# Alt+G: live content search
-bind '"\eg": "\C-e\C-u rgi\C-m"'
