@@ -31,6 +31,32 @@ source /home/alex24/.opam/opam-init/init.fish > /dev/null 2> /dev/null; or true
 starship init fish | source
 navi widget fish | source
 
+function rgrep
+    if test -z "$argv"
+        echo "Usage: rgrep <search_term>"
+        return 1
+    end
+    
+    set query $argv[1]
+    
+    set result (rg --color=always -n "$query" | \
+        fzf --ansi \
+            --preview-window="right:60%" \
+            --preview "bat --color=always --highlight-line {2} {1}")
+    
+    if test -n "$result"
+        set file (echo $result | cut -d: -f1)
+        set line (echo $result | cut -d: -f2)
+        lvim "$file" +"$line"
+    end
+end
+
+alias rfind='rg --files | fzf --preview "bat --color=always {}" --bind "enter:execute(lvim {})"'
+
+bind \cf 'rgrep (read -P "Search: ")'
+bind \cg 'rfind'
+
+
 
 
 if status is-interactive
