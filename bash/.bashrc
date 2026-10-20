@@ -2,9 +2,12 @@
 
 # If not running interactively, don't do anything
 case $- in
-    *i*) ;;
-      *) return;;
+*i*) ;;
+*) return ;;
 esac
+
+export EDITOR=nvim
+export VISUAL=nvim
 
 # ---------------------------------------------------------------------------
 # History
@@ -25,18 +28,18 @@ shopt -s checkwinsize
 
 # set variable identifying the chroot you work in
 if [ -z "${debian_chroot:-}" ] && [ -r /etc/debian_chroot ]; then
-    debian_chroot=$(cat /etc/debian_chroot)
+  debian_chroot=$(cat /etc/debian_chroot)
 fi
 
 # ---------------------------------------------------------------------------
 # Colors and aliases
 # ---------------------------------------------------------------------------
 if [ -x /usr/bin/dircolors ]; then
-    test -r ~/.dircolors && eval "$(dircolors -b ~/.dircolors)" || eval "$(dircolors -b)"
-    alias ls='ls --color=auto'
-    alias grep='grep --color=auto'
-    alias fgrep='fgrep --color=auto'
-    alias egrep='egrep --color=auto'
+  test -r ~/.dircolors && eval "$(dircolors -b ~/.dircolors)" || eval "$(dircolors -b)"
+  alias ls='ls --color=auto'
+  alias grep='grep --color=auto'
+  alias fgrep='fgrep --color=auto'
+  alias egrep='egrep --color=auto'
 fi
 
 alias ll='ls -alF'
@@ -48,7 +51,7 @@ alias l='ls -CF'
 alias alert='notify-send --urgency=low -i "$([ $? = 0 ] && echo terminal || echo error)" "$(history|tail -n1|sed -e '\''s/^\s*[0-9]\+\s*//;s/[;&|]\s*alert$//'\'')"'
 
 if [ -f ~/.bash_aliases ]; then
-    . ~/.bash_aliases
+  . ~/.bash_aliases
 fi
 
 # ---------------------------------------------------------------------------
@@ -81,9 +84,20 @@ export FZF_CTRL_T_OPTS="--preview 'bat --color=always --line-range :200 {}'"
 export FZF_ALT_C_COMMAND='fd --type d --hidden --exclude .git'
 export FZF_ALT_C_OPTS="--preview 'eza -TL 1 --color=always {}'"
 
-# Sourced BEFORE atuin, so atuin keeps Ctrl+R and the Up arrow
-[ -f /usr/share/doc/fzf/examples/key-bindings.bash ] && \
-    source /usr/share/doc/fzf/examples/key-bindings.bash
+# fzf key bindings: works on Arch, Debian/Mint, and new fzf (>= 0.48)
+if command -v fzf >/dev/null 2>&1; then
+  if fzf --bash >/dev/null 2>&1; then
+    eval "$(fzf --bash)"
+  else
+    for f in /usr/share/fzf/key-bindings.bash \
+      /usr/share/doc/fzf/examples/key-bindings.bash; do
+      [ -f "$f" ] && {
+        source "$f"
+        break
+      }
+    done
+  fi
+fi
 
 # ---------------------------------------------------------------------------
 # atuin: shell history
@@ -103,3 +117,28 @@ command -v atuin >/dev/null 2>&1 && eval "$(atuin init bash)"
 command -v zoxide >/dev/null 2>&1 && eval "$(zoxide init bash)"
 command -v starship >/dev/null 2>&1 && eval "$(starship init bash)"
 
+alias lnvim='NVIM_APPNAME=nvim-lazyvim nvim'
+
+# ---------------------------------------------------------------
+# Laradock helpers
+# ---------------------------------------------------------------
+LARADOCK_DIR="/home/alex24/new_data/projects/laradock"
+
+# Start the main Laradock containers in the background
+alias larad='cd "$LARADOCK_DIR" && docker compose up -d nginx mysql phpmyadmin workspace'
+
+# Enter the workspace container
+alias work='cd "$LARADOCK_DIR" && docker compose exec workspace bash'
+
+# Stop and remove Laradock containers
+laradown() {
+  cd "$LARADOCK_DIR" || return 1
+  docker compose down # add -v to also remove volumes
+  # To also stop ALL running containers on the host:
+  # [[ -n "$(docker ps -q)" ]] && docker stop $(docker ps -q)
+}
+
+alias ld='laradown'
+
+alias show='/home/shared/222/show.sh'
+alias edit='/home/shared/222/edit.sh'
