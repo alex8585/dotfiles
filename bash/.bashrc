@@ -138,6 +138,10 @@ laradown() {
   # [[ -n "$(docker ps -q)" ]] && docker stop $(docker ps -q)
 }
 
+notes() {
+  cd /home/shared/notes && nvim
+}
+
 alias ld='laradown'
 
 alias show='/home/shared/222/show.sh'
