@@ -9,6 +9,10 @@ esac
 export EDITOR=nvim
 export VISUAL=nvim
 
+if command -v tmux >/dev/null && [ -z "$TMUX" ] && [[ $- == *i* ]]; then
+  exec tmux new-session -A -s main
+fi
+
 # ---------------------------------------------------------------------------
 # History
 # ---------------------------------------------------------------------------
