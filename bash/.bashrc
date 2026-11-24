@@ -150,3 +150,7 @@ alias ld='laradown'
 
 alias show='/home/shared/222/show.sh'
 alias edit='/home/shared/222/edit.sh'
+alias ps='procs'
+alias o='xdg-open'
+
+source /home/alex32/.config/broot/launcher/bash/br
